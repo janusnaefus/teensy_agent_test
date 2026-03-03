@@ -1,0 +1,12 @@
+# Ignore build output
+.pio/
+.pioenvs/
+.piolibdeps/
+.vscode/
+
+# Ignore logs
+*.log
+
+# Python
+*.pyc
+__pycache__/
