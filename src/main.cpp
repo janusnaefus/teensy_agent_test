@@ -71,7 +71,8 @@ enum State {
 // Precompute total units in the message for timing calculation
 uint32_t countUnits(const char* msg) {
     uint32_t units = 0;
-    for (size_t i = 0; i < strlen(msg); i++) {
+    size_t msgLen = strlen(msg);
+    for (size_t i = 0; i < msgLen; i++) {
         char c = msg[i];
         if (c == ' ') {
             units += 7; // word gap units
@@ -87,7 +88,7 @@ uint32_t countUnits(const char* msg) {
             if (j < len - 1) units += 1; // intra-character gap
         }
         // after character gap (except last char or before space)
-        if (i < strlen(msg) - 1 && msg[i+1] != ' ') {
+        if (i < msgLen - 1 && msg[i+1] != ' ') {
             units += 3;
         }
     }
@@ -154,7 +155,7 @@ void loop() {
                     msgIndex++;
                     if (msgIndex >= strlen(message)) {
                         state = MESSAGE_OFF;
-                        duration = interWordGap;
+                        duration = breakTime;
                         Serial.print("repeat at ");
                         Serial.println(now);
                         msgIndex = 0;
@@ -171,7 +172,7 @@ void loop() {
                 codeIndex = 0;
                 if (msgIndex >= strlen(message)) {
                     state = MESSAGE_OFF;
-                    duration = interWordGap;
+                    duration = breakTime;
                     Serial.print("repeat at ");
                     Serial.println(now);
                     msgIndex = 0;
@@ -237,9 +238,9 @@ void loop() {
         case MESSAGE_OFF:
             digitalWrite(LED_BUILTIN, LOW);
             Serial.print("MESSAGE GAP ");
-            Serial.print(breakTime);
+            Serial.print(duration);
             Serial.println("ms");
-            delay(breakTime);
+            delay(duration);
             state = SYMBOL_ON;
             break;
     }
