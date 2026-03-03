@@ -107,6 +107,8 @@ void setup() {
     while (!Serial && millis() < 3000) {
         // wait for serial for up to 3 seconds
     }
+    Serial.print("Message: ");
+    Serial.println(message);
     Serial.println("Teensy 4.1 test: hello from MCU dev agent!");
 
     // Calculate timing units to fit totalTransmissionTime
