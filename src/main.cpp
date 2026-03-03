@@ -240,8 +240,7 @@ void loop() {
             Serial.print("MESSAGE GAP ");
             Serial.print(duration);
             Serial.println("ms");
-            // Use non-blocking delay to keep timing consistent
-            // But since we wait here, use delay as before
+            // Use delay here to ensure exact break duration
             delay(duration);
             state = SYMBOL_ON;
             break;
