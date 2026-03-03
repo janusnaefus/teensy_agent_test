@@ -3,7 +3,7 @@
 const char* message = "foobar";
 
 const uint32_t totalTransmissionTime = 2000; // 2 seconds per transmission
-const uint32_t breakTime = 1000;             // 1 second break
+const uint32_t breakDuration = 1000;          // 1 second break
 
 // Morse timing units will be calculated dynamically to fit totalTransmissionTime
 
@@ -155,7 +155,7 @@ void loop() {
                     msgIndex++;
                     if (msgIndex >= strlen(message)) {
                         state = MESSAGE_OFF;
-                        duration = breakTime;
+                        duration = breakDuration;
                         Serial.print("repeat at ");
                         Serial.println(now);
                         msgIndex = 0;
@@ -172,7 +172,7 @@ void loop() {
                 codeIndex = 0;
                 if (msgIndex >= strlen(message)) {
                     state = MESSAGE_OFF;
-                    duration = breakTime;
+                    duration = breakDuration;
                     Serial.print("repeat at ");
                     Serial.println(now);
                     msgIndex = 0;
