@@ -129,6 +129,9 @@ void setup() {
     Serial.print(interCharGap);
     Serial.print(" interWordGap=");
     Serial.println(interWordGap);
+
+    Serial.print("Total units in message: ");
+    Serial.println(totalUnits);
 }
 
 void loop() {
