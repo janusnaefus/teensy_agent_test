@@ -1,12 +1,11 @@
 #include <Arduino.h>
 
-const char* message = "hello world";
+const char* message = "foobar";
 
-const uint32_t dotDuration = 100;      // 1 unit
-const uint32_t dashDuration = dotDuration * 3; // 3 units
-const uint32_t intraCharGap = dotDuration;     // between dots/dashes in a char (1 unit)
-const uint32_t interCharGap = dotDuration * 3; // between characters (3 units)
-const uint32_t interWordGap = dotDuration * 7; // between words (7 units)
+const uint32_t totalTransmissionTime = 2000; // 2 seconds per transmission
+const uint32_t breakTime = 1000;             // 1 second break
+
+// Morse timing units will be calculated dynamically to fit totalTransmissionTime
 
 struct MorseSymbol {
     char symbol;
@@ -69,6 +68,38 @@ enum State {
     MESSAGE_OFF
 };
 
+// Precompute total units in the message for timing calculation
+uint32_t countUnits(const char* msg) {
+    uint32_t units = 0;
+    for (size_t i = 0; i < strlen(msg); i++) {
+        char c = msg[i];
+        if (c == ' ') {
+            units += 7; // word gap units
+            continue;
+        }
+        const char* code = getMorseCode(c);
+        if (!code || code[0] == '\0') continue;
+
+        size_t len = strlen(code);
+        for (size_t j = 0; j < len; j++) {
+            if (code[j] == '.') units += 1;
+            else if (code[j] == '-') units += 3;
+            if (j < len - 1) units += 1; // intra-character gap
+        }
+        // after character gap (except last char or before space)
+        if (i < strlen(msg) - 1 && msg[i+1] != ' ') {
+            units += 3;
+        }
+    }
+    return units;
+}
+
+uint32_t dotDuration = 100;      // will be recalculated
+uint32_t dashDuration = 0;
+uint32_t intraCharGap = 0;
+uint32_t interCharGap = 0;
+uint32_t interWordGap = 0;
+
 void setup() {
     pinMode(LED_BUILTIN, OUTPUT);
     Serial.begin(115200);
@@ -76,6 +107,27 @@ void setup() {
         // wait for serial for up to 3 seconds
     }
     Serial.println("Teensy 4.1 test: hello from MCU dev agent!");
+
+    // Calculate timing units to fit totalTransmissionTime
+    uint32_t totalUnits = countUnits(message);
+    if (totalUnits == 0) totalUnits = 1; // avoid div by zero
+
+    dotDuration = totalTransmissionTime / totalUnits;
+    dashDuration = dotDuration * 3;
+    intraCharGap = dotDuration;
+    interCharGap = dotDuration * 3;
+    interWordGap = dotDuration * 7;
+
+    Serial.print("Timing units (ms): dot=");
+    Serial.print(dotDuration);
+    Serial.print(" dash=");
+    Serial.print(dashDuration);
+    Serial.print(" intraCharGap=");
+    Serial.print(intraCharGap);
+    Serial.print(" interCharGap=");
+    Serial.print(interCharGap);
+    Serial.print(" interWordGap=");
+    Serial.println(interWordGap);
 }
 
 void loop() {
@@ -131,13 +183,23 @@ void loop() {
                     duration = interCharGap;
                 }
                 digitalWrite(LED_BUILTIN, LOW);
+                Serial.print("CHAR_OFF at ");
+                Serial.println(now);
             } else {
                 // output current symbol ON
                 digitalWrite(LED_BUILTIN, HIGH);
                 if (currentCode[codeIndex] == '.') {
                     duration = dotDuration;
+                    Serial.print(".");
+                    Serial.print(" ON ");
+                    Serial.print(duration);
+                    Serial.println("ms");
                 } else { // '-'
                     duration = dashDuration;
+                    Serial.print("-");
+                    Serial.print(" ON ");
+                    Serial.print(duration);
+                    Serial.println("ms");
                 }
                 state = SYMBOL_OFF;
             }
@@ -146,6 +208,9 @@ void loop() {
         case SYMBOL_OFF:
             digitalWrite(LED_BUILTIN, LOW);
             duration = intraCharGap;
+            Serial.print(" OFF ");
+            Serial.print(duration);
+            Serial.println("ms");
             codeIndex++;
             state = SYMBOL_ON;
             break;
@@ -153,18 +218,28 @@ void loop() {
         case CHAR_OFF:
             // gap between characters
             digitalWrite(LED_BUILTIN, LOW);
+            Serial.print("CHAR GAP ");
+            Serial.print(duration);
+            Serial.println("ms");
             state = SYMBOL_ON;
             break;
 
         case WORD_OFF:
             // gap between words
             digitalWrite(LED_BUILTIN, LOW);
+            Serial.print("WORD GAP ");
+            Serial.print(duration);
+            Serial.println("ms");
             msgIndex++; // skip space
             state = SYMBOL_ON;
             break;
 
         case MESSAGE_OFF:
             digitalWrite(LED_BUILTIN, LOW);
+            Serial.print("MESSAGE GAP ");
+            Serial.print(breakTime);
+            Serial.println("ms");
+            delay(breakTime);
             state = SYMBOL_ON;
             break;
     }
