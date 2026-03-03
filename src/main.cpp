@@ -132,6 +132,11 @@ void setup() {
 
     Serial.print("Total units in message: ");
     Serial.println(totalUnits);
+
+    // Calculate and print total expected transmission time for verification
+    uint32_t expectedTransmissionTime = dotDuration * totalUnits;
+    Serial.print("Expected total transmission time (ms): ");
+    Serial.println(expectedTransmissionTime);
 }
 
 void loop() {
